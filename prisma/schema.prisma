@@ -1,0 +1,111 @@
+// Prisma Schema for LinkedIn Digital Sales Platform MVP
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String            @id @default(cuid())
+  email         String            @unique
+  name          String?
+  password      String?
+  avatar        String?
+  role          String            @default("user")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  accounts      LinkedInAccount[]
+  prospects     Prospect[]
+  automationRules AutomationRule[]
+}
+
+model LinkedInAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  cookie      String?
+  status      String   @default("disconnected")
+  riskLevel   String   @default("low")
+  dailyLimit  Int      @default(50)
+  usedToday   Int      @default(0)
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  activities  ProspectActivity[]
+}
+
+model Prospect {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedinId  String            @unique
+  name        String
+  title       String?
+  company     String?
+  location    String?
+  profileUrl  String?
+  notes       String?
+  tags        String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  activities  ProspectActivity[]
+}
+
+model ProspectActivity {
+  id          String          @id @default(cuid())
+  prospectId  String
+  prospect    Prospect        @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  accountId   String?
+  account     LinkedInAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  type        String
+  status      String          @default("pending")
+  content     String?
+  scheduledAt DateTime?
+  executedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model AutomationRule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  trigger     String
+  conditions  String?
+  actions     String
+  enabled     Boolean  @default(true)
+  schedule    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContentTopic {
+  id            String   @id @default(cuid())
+  userId        String
+  keywords      String
+  searchInterval Int     @default(3600)
+  lastCrawl     DateTime?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  articles      ContentArticle[]
+}
+
+model ContentArticle {
+  id          String        @id @default(cuid())
+  topicId     String
+  topic       ContentTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title       String
+  url         String        @unique
+  author      String?
+  engagement  Int           @default(0)
+  summary     String?
+  createdAt   DateTime      @default(now())
+}
