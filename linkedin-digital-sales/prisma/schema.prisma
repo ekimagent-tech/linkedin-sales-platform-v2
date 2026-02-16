@@ -1,0 +1,223 @@
+// Prisma Schema for LinkedIn Digital Sales Platform MVP
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String?
+  password        String?
+  avatar          String?
+  role            String            @default("user")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  accounts        LinkedInAccount[]
+  prospects       Prospect[]
+  automationRules AutomationRule[]
+  messageDrafts   MessageDraft[]
+  meetingTemplates MeetingTemplate[]
+  meetings        Meeting[]
+}
+
+model LinkedInAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  cookie      String?
+  status      String   @default("disconnected")
+  riskLevel   String   @default("low")
+  dailyLimit  Int      @default(50)
+  usedToday   Int      @default(0)
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  activities  ProspectActivity[]
+  automationRules AutomationRule[]
+  messageDrafts MessageDraft[]
+  activityLogs ActivityLog[]
+}
+
+model Prospect {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedinId  String            @unique
+  name        String
+  title       String?
+  company     String?
+  location    String?
+  profileUrl  String?
+  notes       String?
+  tags        String?
+  status      String            @default("NEW") // NEW, CONTACTED, REPLIED, CONNECTED, MEETING_SCHEDULED, CONVERTED
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  activities  ProspectActivity[]
+  messageDrafts MessageDraft[]
+  meetings    Meeting[]
+  activityLogs ActivityLog[]
+}
+
+model ProspectActivity {
+  id          String          @id @default(cuid())
+  prospectId  String
+  prospect    Prospect        @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  accountId   String?
+  account     LinkedInAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  type        String
+  status      String          @default("pending")
+  content     String?
+  scheduledAt DateTime?
+  executedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model AutomationRule {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  type             String          // DIRECT_FOLLOW, DIRECT_CONNECT, NETWORK_EXPAND, POST_ENGAGE, POST_REPLY
+  status           String          @default("DRAFT") // DRAFT, ACTIVE, PAUSED, ERROR, COMPLETED
+  isActive         Boolean         @default(true)
+  accountId        String?
+  account          LinkedInAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  
+  // 目標設置
+  targetKeywords   String?         // JSON array stored as string
+  targetCompanies  String?         // JSON array stored as string
+  targetTitles     String?         // JSON array stored as string
+  excludeKeywords  String?         // JSON array for exclusion
+  
+  // 動作設置
+  actionType       String          // LIKE_POST, SEND_MESSAGE, SEND_CONNECTION, FOLLOW_PROFILE, AI_COMMENT
+  messageTemplate  String?         // 訊息模板
+  aiPrompt         String?         // AI prompt for POST_ENGAGE
+  
+  // 排程
+  triggerTime      String?         // "09:00-12:00, 14:00-18:00"
+  dayOfWeek        String?         // "1-5" for weekdays
+  
+  // 限制
+  dailyLimit       Int             @default(20)
+  totalLimit       Int?
+  delayMin         Int             @default(30)   // Minimum delay between actions (seconds)
+  delayMax         Int             @default(120)  // Maximum delay between actions (seconds)
+  
+  // 統計
+  runsToday        Int             @default(0)
+  lastRunAt        DateTime?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+// Activity log for automation
+model ActivityLog {
+  id          String    @id @default(cuid())
+  accountId   String?
+  account     LinkedInAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  prospectId  String?
+  prospect    Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  action      String    // CONNECT, FOLLOW, LIKE, COMMENT, MESSAGE
+  details     String?   // JSON string with log details
+  status      String    // success, failed, skipped
+  linkedinRef String?   // LinkedIn profile/post URL
+  createdAt   DateTime  @default(now())
+}
+
+model MessageDraft {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospectId      String?
+  prospect        Prospect?       @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  accountId       String?
+  account         LinkedInAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  
+  content         String          // AI 生成的訊息
+  actionType      String
+  
+  status          String          @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, SCHEDULED, SENT, FAILED
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  
+  // 審批
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model MeetingTemplate {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  title         String    // 會議標題模板
+  description   String?   // 會議描述
+  duration      Int       // 分鐘
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  meetings      Meeting[]
+}
+
+model Meeting {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospectId      String?
+  prospect        Prospect?       @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  
+  templateId      String?
+  template        MeetingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  timezone        String          @default("UTC")
+  
+  status          String          @default("SCHEDULED") // SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
+  calendarEventId String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model ContentTopic {
+  id            String   @id @default(cuid())
+  userId        String
+  keywords      String
+  searchInterval Int     @default(3600)
+  lastCrawl     DateTime?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  articles      ContentArticle[]
+}
+
+model ContentArticle {
+  id          String        @id @default(cuid())
+  topicId     String
+  topic       ContentTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title       String
+  url         String        @unique
+  author      String?
+  engagement  Int           @default(0)
+  summary     String?
+  createdAt   DateTime      @default(now())
+}
