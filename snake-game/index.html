@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            color: #eee;
+        }
+        h1 { margin-bottom: 10px; text-shadow: 2px 2px #0f0; }
+        #game {
+            border: 3px solid #0f0;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+        #score { font-size: 24px; margin: 10px 0; }
+        #msg { color: #f00; height: 24px; }
+    </style>
+</head>
+<body>
+    <h1>SNAKE</h1>
+    <div id="score">Score: 0</div>
+    <canvas id="game" width="400" height="400"></canvas>
+    <div id="msg"></div>
+    <script>
+        const cvs = document.getElementById('game');
+        const ctx = cvs.getContext('2d');
+        const sc = document.getElementById('score');
+        const msg = document.getElementById('msg');
+        const sz = 20;
+        let snake = [{x:10,y:10}], dir = {x:1,y:0}, food = {x:15,y:15}, score = 0, gameover = false;
+        
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0,0,400,400);
+            ctx.fillStyle = '#0f0';
+            snake.forEach((p,i) => ctx.fillRect(p.x*sz, p.y*sz, sz-2, sz-2));
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(food.x*sz, food.y*sz, sz-2, sz-2);
+        }
+        function move() {
+            if(gameover) return;
+            const h = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+            if(h.x<0||h.x>=20||h.y<0||h.y>=20||snake.some(p=>p.x===h.x&&p.y===h.y)) {
+                gameover = true; msg.textContent = 'GAME OVER - Press R to restart';
+                return;
+            }
+            snake.unshift(h);
+            if(h.x===food.x&&h.y===food.y) {
+                score++; sc.textContent = 'Score: '+score;
+                food = {x:Math.floor(Math.random()*20), y:Math.floor(Math.random()*20)};
+            } else snake.pop();
+        }
+        document.onkeydown = e => {
+            if(gameover && e.key==='r') { snake=[{x:10,y:10}]; dir={x:1,y:0}; score=0; gameover=false; sc.textContent='Score: 0'; msg.textContent=''; }
+            if(e.key==='ArrowUp'&&dir.y!==1) dir={x:0,y:-1};
+            if(e.key==='ArrowDown'&&dir.y!==-1) dir={x:0,y:1};
+            if(e.key==='ArrowLeft'&&dir.x!==1) dir={x:-1,y:0};
+            if(e.key==='ArrowRight'&&dir.x!==-1) dir={x:1,y:0};
+        };
+        setInterval(() => { move(); draw(); }, 100);
+        draw();
+    </script>
+</body>
+</html>
