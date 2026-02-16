@@ -10,12 +10,14 @@ import {
   Settings,
   LogOut,
   Linkedin,
+  Activity,
 } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/accounts", label: "Accounts", icon: Users },
   { href: "/dashboard/prospects", label: "Prospects", icon: UserPlus },
+  { href: "/dashboard/activity", label: "Activity Log", icon: Activity },
   { href: "/dashboard/automation", label: "Automation", icon: Zap },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]

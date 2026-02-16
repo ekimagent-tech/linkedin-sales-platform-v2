@@ -34,6 +34,25 @@ export interface Prospect {
   profileUrl?: string
   notes?: string
   tags?: string
+  email?: string
+  phone?: string
+  connections?: number
+  followers?: number
+  bio?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface ActivityLog {
+  id: string
+  userId: string
+  prospectId?: string
+  prospectName?: string
+  action: 'like' | 'follow' | 'connect' | 'message' | 'view' | 'comment' | 'share'
+  targetUrl?: string
+  status: 'pending' | 'completed' | 'failed'
+  errorMessage?: string
+  createdAt: Date
 }
 
 export interface AutomationRule {
@@ -53,4 +72,7 @@ export interface DashboardStats {
   totalProspects: number
   pendingActivities: number
   completedActivities: number
+  thisWeekConnections: number
+  thisWeekMessages: number
+  responseRate: number
 }
