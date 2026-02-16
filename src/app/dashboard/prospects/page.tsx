@@ -4,9 +4,27 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, Plus, MoreHorizontal, Linkedin, MapPin, Building, Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import { Prospect } from "@/types"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Search, Filter, Plus, MoreHorizontal, Linkedin, MapPin, Building, Upload, Loader2, CheckCircle, AlertCircle, Sparkles, Target, Users, MessageSquare, ThumbsUp, UserPlus, Send, Play, Clock, X, ChevronRight, Briefcase } from "lucide-react"
+import { Prospect, SearchedProspect, ProspectAction, ProspectProfileAttributes } from "@/types"
+
+// Mock locations
+const availableLocations = [
+  "San Francisco, CA", "New York, NY", "Los Angeles, CA", "Seattle, WA",
+  "Austin, TX", "Boston, MA", "Chicago, IL", "Denver, CO"
+]
+
+// Mock search results
+const mockSearchResults: SearchedProspect[] = [
+  { linkedinId: "john-smith-1", name: "John Smith", title: "VP of Engineering", company: "TechGiant", location: "San Francisco, CA", connectionDegree: "2nd", profileUrl: "https://linkedin.com/in/john-smith-1" },
+  { linkedinId: "anna-kumar-2", name: "Anna Kumar", title: "CTO", company: "InnovateAI", location: "New York, NY", connectionDegree: "1st", profileUrl: "https://linkedin.com/in/anna-kumar-2" },
+  { linkedinId: "robert-jones-3", name: "Robert Jones", title: "Director of Product", company: "BigCorp", location: "Seattle, WA", connectionDegree: "3rd", profileUrl: "https://linkedin.com/in/robert-jones-3" },
+  { linkedinId: "lisa-chen-4", name: "Lisa Chen", title: "Head of Sales", company: "SalesForce Pro", location: "Boston, MA", connectionDegree: "2nd", profileUrl: "https://linkedin.com/in/lisa-chen-4" },
+  { linkedinId: "marcus-wilson-5", name: "Marcus Wilson", title: "CEO", company: "StartupLab", location: "Austin, TX", connectionDegree: "1st", profileUrl: "https://linkedin.com/in/marcus-wilson-5" },
+]
+
+type ViewMode = 'list' | 'setup' | 'attributes' | 'search' | 'actions' | 'queue'
 
 // Mock data for MVP
 const initialProspects: Prospect[] = [
@@ -78,12 +96,176 @@ export default function ProspectsPage() {
   const [prospects, setProspects] = useState(initialProspects)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedProspects, setSelectedProspects] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   
+  // Product/Service Setup states
+  const [productName, setProductName] = useState("")
+  const [productDescription, setProductDescription] = useState("")
+  const [targetLocations, setTargetLocations] = useState<string[]>([])
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  
+  // AI Generated Attributes
+  const [generatedAttributes, setGeneratedAttributes] = useState<ProspectProfileAttributes | null>(null)
+  const [editedAttributes, setEditedAttributes] = useState<ProspectProfileAttributes | null>(null)
+  
+  // Smart Search states
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<SearchedProspect[]>([])
+  const [selectedSearchResults, setSelectedSearchResults] = useState<string[]>([])
+  
+  // Action Recommendations
+  const [prospectActions, setProspectActions] = useState<ProspectAction[]>([])
+  
+  // Automation Queue
+  const [actionQueue, setActionQueue] = useState<ProspectAction[]>([])
+  const [executionLogs, setExecutionLogs] = useState<{ id: string; actionType: string; prospectName: string; status: string; executedAt: string }[]>([])
+
   // CSV Import states
   const [isImporting, setIsImporting] = useState(false)
   const [importProgress, setImportProgress] = useState(0)
   const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+
+  // Toggle location selection
+  const toggleLocation = (location: string) => {
+    setTargetLocations(prev => 
+      prev.includes(location) 
+        ? prev.filter(l => l !== location)
+        : [...prev, location]
+    )
+  }
+
+  // AI Analysis
+  const handleAnalyzeWithAI = async () => {
+    if (!productName || !productDescription || targetLocations.length === 0) return
+    setIsAnalyzing(true)
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const attributes: ProspectProfileAttributes = {
+      industries: ["Technology", "SaaS", "Enterprise Software", "Fintech"],
+      jobTitles: ["VP of Sales", "CEO", "CTO", "Director of Engineering", "Product Manager"],
+      companySizes: ["50-200", "200-500", "500-1000", "1000+"],
+      locations: targetLocations,
+      seniorities: ["C-Level", "VP", "Director", "Senior Manager"]
+    }
+    
+    setGeneratedAttributes(attributes)
+    setEditedAttributes(attributes)
+    setIsAnalyzing(false)
+    setViewMode('attributes')
+  }
+
+  // Confirm attributes
+  const handleConfirmAttributes = () => {
+    if (editedAttributes) setGeneratedAttributes(editedAttributes)
+    setViewMode('search')
+  }
+
+  // Smart Search
+  const handleSearchProspects = async () => {
+    setIsSearching(true)
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setSearchResults(mockSearchResults)
+    setIsSearching(false)
+  }
+
+  // Import selected
+  const handleImportSelected = () => {
+    const newProspects: Prospect[] = selectedSearchResults.map((id) => {
+      const result = searchResults.find(r => r.linkedinId === id)!
+      return {
+        id: `imported-${Date.now()}-${id}`,
+        userId: "user1",
+        linkedinId: result.linkedinId,
+        name: result.name,
+        title: result.title,
+        company: result.company,
+        location: result.location,
+        connectionDegree: result.connectionDegree,
+        tags: "smart-search,imported"
+      }
+    })
+    
+    setProspects([...prospects, ...newProspects])
+    setSelectedSearchResults([])
+    setSearchResults([])
+    generateActionRecommendations(newProspects)
+    setViewMode('actions')
+  }
+
+  // Generate recommendations
+  const generateActionRecommendations = (importedProspects: Prospect[]) => {
+    const actions: ProspectAction[] = importedProspects.map(prospect => {
+      const types: ProspectAction['actionType'][] = ['follow', 'like', 'connect', 'message']
+      const type = types[Math.floor(Math.random() * types.length)]
+      return {
+        id: `action-${Date.now()}-${prospect.id}`,
+        prospectId: prospect.id,
+        prospectName: prospect.name,
+        actionType: type,
+        targetUrl: `https://linkedin.com/in/${prospect.linkedinId}`,
+        messageDraft: type === 'message' ? `Hi ${prospect.name.split(' ')[0]}, I came across your profile and was impressed by your work at ${prospect.company}.` : undefined,
+        recommendation: `AI recommends ${type} based on prospect's recent activity.`,
+        status: 'pending' as const,
+        createdAt: new Date()
+      }
+    })
+    setProspectActions(actions)
+  }
+
+  // Add to queue
+  const handleAddToQueue = () => {
+    setActionQueue(prospectActions.map(a => ({ ...a, status: 'pending' as const })))
+    setViewMode('queue')
+  }
+
+  // Confirm action
+  const handleConfirmAction = (actionId: string) => {
+    setActionQueue(prev => prev.map(a => a.id === actionId ? { ...a, status: 'confirmed' as const } : a))
+  }
+
+  // Execute action
+  const handleExecuteAction = async (actionId: string) => {
+    const action = actionQueue.find(a => a.id === actionId)
+    if (!action) return
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    setExecutionLogs(prev => [{
+      id: `log-${Date.now()}`,
+      actionType: action.actionType,
+      prospectName: action.prospectName,
+      status: 'success',
+      executedAt: new Date().toLocaleString()
+    }, ...prev])
+    setActionQueue(prev => prev.map(a => a.id === actionId ? { ...a, status: 'executed' as const } : a))
+  }
+
+  // Execute all
+  const handleExecuteAll = async () => {
+    const confirmed = actionQueue.filter(a => a.status === 'confirmed')
+    for (const action of confirmed) {
+      await handleExecuteAction(action.id)
+    }
+  }
+
+  const getActionIcon = (type: string) => {
+    switch (type) {
+      case 'like': return ThumbsUp
+      case 'follow': return Users
+      case 'connect': return UserPlus
+      case 'message': return MessageSquare
+      default: return Target
+    }
+  }
+
+  const getActionColor = (type: string) => {
+    switch (type) {
+      case 'like': return 'text-orange-500 bg-orange-50'
+      case 'follow': return 'text-purple-500 bg-purple-50'
+      case 'connect': return 'text-blue-500 bg-blue-50'
+      case 'message': return 'text-green-500 bg-green-50'
+      default: return 'text-gray-500 bg-gray-50'
+    }
+  }
 
   const filteredProspects = prospects.filter((prospect) =>
     prospect.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -196,6 +378,10 @@ export default function ProspectsPage() {
           <p className="text-gray-500 mt-1">Manage your potential customers</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setViewMode('setup')}>
+            <Sparkles className="w-4 h-4 mr-2" />
+            Smart Search
+          </Button>
           <input
             type="file"
             ref={fileInputRef}

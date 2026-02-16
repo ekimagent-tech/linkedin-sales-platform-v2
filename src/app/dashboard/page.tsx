@@ -1,13 +1,13 @@
+"use client"
+
 import { Suspense } from "react"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserPlus, Activity, CheckCircle, TrendingUp, MessageSquare, Loader2 } from "lucide-react"
+import { Users, UserPlus, Activity, CheckCircle, TrendingUp, MessageSquare, ChevronRight } from "lucide-react"
 import { DashboardStats } from "@/types"
 
 // Better mock data for dashboard stats
 async function getStats(): Promise<DashboardStats> {
-  // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500))
   
   return {
@@ -47,60 +47,72 @@ async function StatsCards() {
 
   return (
     <>
-      {/* Stats Cards */}
+      {/* Stats Cards - Clickable with Link */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.totalAccounts}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeAccounts} active
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/accounts" className="block">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalAccounts}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                {stats.activeAccounts} active
+                <ChevronRight className="w-3 h-3 ml-auto" />
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Prospects</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.totalProspects}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              +12 this week
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/prospects" className="block">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-green-300 transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Prospects</CardTitle>
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalProspects}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 text-green-500" />
+                +12 this week
+                <ChevronRight className="w-3 h-3 ml-auto" />
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Activities</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.pendingActivities}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting execution
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/automation" className="block">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-orange-300 transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Activities</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.pendingActivities}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                Awaiting execution
+                <ChevronRight className="w-3 h-3 ml-auto" />
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.completedActivities}</div>
-            <p className="text-xs text-muted-foreground">
-              Total actions taken
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/activity" className="block">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-purple-300 transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.completedActivities}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                Total actions taken
+                <ChevronRight className="w-3 h-3 ml-auto" />
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Weekly Stats */}
@@ -139,18 +151,12 @@ async function StatsCards() {
   )
 }
 
-export default async function DashboardPage() {
-  const session = await auth()
-  
-  if (!session) {
-    redirect("/login")
-  }
-
+export default function DashboardPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome back, {session.user?.name || session.user?.email}</p>
+        <p className="text-gray-500 mt-1">Overview of your LinkedIn sales activities</p>
       </div>
 
       {/* Stats with Suspense for loading state */}
@@ -158,28 +164,38 @@ export default async function DashboardPage() {
         <StatsCards />
       </Suspense>
 
-      {/* Recent Activity */}
+      {/* Recent Activity - Clickable items */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Activity</CardTitle>
+          <Link href="/dashboard/activity" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
+            View all <ChevronRight className="w-4 h-4" />
+          </Link>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[
-              { action: "Followed", target: "John Smith", time: "2 minutes ago", icon: Users, color: "text-purple-500" },
-              { action: "Liked post", target: "Sarah Johnson's post", time: "15 minutes ago", icon: Activity, color: "text-orange-500" },
-              { action: "Connected with", target: "Mike Chen", time: "1 hour ago", icon: UserPlus, color: "text-blue-500" },
-              { action: "Sent message", target: "Emily Davis", time: "2 hours ago", icon: MessageSquare, color: "text-green-500" },
-              { action: "Followed", target: "Alex Wong", time: "3 hours ago", icon: Users, color: "text-purple-500" },
-            ].map((activity, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+              { id: "1", action: "Followed", target: "John Smith", time: "2 minutes ago", icon: Users, color: "text-purple-500", type: "follow" },
+              { id: "2", action: "Liked post", target: "Sarah Johnson's post", time: "15 minutes ago", icon: Activity, color: "text-orange-500", type: "like" },
+              { id: "3", action: "Connected with", target: "Mike Chen", time: "1 hour ago", icon: UserPlus, color: "text-blue-500", type: "connect" },
+              { id: "4", action: "Sent message", target: "Emily Davis", time: "2 hours ago", icon: MessageSquare, color: "text-green-500", type: "message" },
+              { id: "5", action: "Followed", target: "Alex Wong", time: "3 hours ago", icon: Users, color: "text-purple-500", type: "follow" },
+            ].map((activity) => (
+              <Link 
+                key={activity.id}
+                href={`/dashboard/activity?filter=${activity.type}`}
+                className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-colors cursor-pointer"
+              >
                 <div className="flex items-center gap-3">
                   <activity.icon className={`w-4 h-4 ${activity.color}`} />
                   <span className="font-medium">{activity.action}</span>
                   <span className="text-gray-500">{activity.target}</span>
                 </div>
-                <span className="text-sm text-gray-400">{activity.time}</span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">{activity.time}</span>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </div>
+              </Link>
             ))}
           </div>
         </CardContent>
